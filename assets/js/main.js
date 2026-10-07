@@ -19,6 +19,14 @@
     $body.css('overflow', lock ? 'hidden' : '');
   }
   function formatNum(n) { return Math.round(n).toLocaleString('en-US'); }
+  function onSwipe($el, cb) {
+    var x = 0, y = 0;
+    $el.on('touchstart', function (e) { var t = e.originalEvent.touches[0]; x = t.clientX; y = t.clientY; })
+       .on('touchend', function (e) {
+         var t = e.originalEvent.changedTouches[0], dx = t.clientX - x, dy = t.clientY - y;
+         if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { cb(dx < 0 ? 1 : -1); }
+       });
+  }
   function isPdf(file) { return /\.pdf([?#]|$)/i.test(file); }
 
   /* ---------------------------------------------------------
@@ -88,6 +96,7 @@
       $menu.toggleClass('open', open).attr('aria-hidden', !open);
       $burger.attr('aria-expanded', open);
       lockScroll(open);
+      if (open) { $menu.find('.mnav-body').scrollTop(0); }
       (open ? $menu.find('.mnav-close') : $burger).trigger('focus');
     }
     $burger.on('click', function () { toggleMenu(true); });
@@ -260,7 +269,12 @@
       $s.toggleClass('is-pinned', m === 'pin').toggleClass('is-swipe', m === 'swipe');
       $hint.text(m === 'pin' ? 'Scroll' : 'Swipe');
     }
-    if (!MOTION) { mode('swipe'); return; }
+    $track.on('scroll', function () {
+      if (!$s.hasClass('is-swipe')) { return; }
+      var max = this.scrollWidth - this.clientWidth;
+      $bar.css('transform', 'scaleX(' + Math.max(0.06, max > 0 ? this.scrollLeft / max : 0) + ')');
+    });
+    if (!MOTION) { mode('swipe'); $bar.css('transform', 'scaleX(.06)'); return; }
     var mm = gsap.matchMedia();
     mm.add('(min-width: 981px)', function () {
       mode('pin');
@@ -272,7 +286,7 @@
           onUpdate: function (st) { $bar.css('transform', 'scaleX(' + st.progress + ')'); } } });
       return function () { if (tw.scrollTrigger) { tw.scrollTrigger.kill(); } tw.kill(); gsap.set(t, { clearProps: 'transform' }); };
     });
-    mm.add('(max-width: 980px)', function () { mode('swipe'); });
+    mm.add('(max-width: 980px)', function () { mode('swipe'); $bar.css('transform', 'scaleX(.06)'); });
   }
 
   /* ---------------------------------------------------------
@@ -313,8 +327,9 @@
     $cards.on('click', function () { open($cards.index(this), $(this)); });
     $m.on('click', function (e) { if (e.target === this) { close(); } });
     $x.on('click', close);
-    $m.find('.cm-nav.p').on('click', function () { render(idx - 1); });
-    $m.find('.cm-nav.n').on('click', function () { render(idx + 1); });
+    $m.find('.cm-prev').on('click', function () { render(idx - 1); });
+    $m.find('.cm-next').on('click', function () { render(idx + 1); });
+    onSwipe($m.find('.cmodal-view'), function (d) { render(idx + d); });
     $doc.on('keydown', function (e) {
       if ($m.prop('hidden')) { return; }
       if (e.key === 'Escape') { close(); }
@@ -326,6 +341,18 @@
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     });
+  }
+
+  /* certificate list: slider controls on mobile */
+  function initCertSlider() {
+    var $list = $('.cert-list'), $pos = $('.cert-pos');
+    if (!$list.length) { return; }
+    var n = $list.children().length;
+    function step() { var li = $list.children()[0]; return li.offsetWidth + 16; }
+    function update() { $pos.text((Math.min(n - 1, Math.round($list[0].scrollLeft / step())) + 1) + ' / ' + n); }
+    $('.cert-ctrl .prev').on('click', function () { $list[0].scrollBy({ left: -step(), behavior: 'smooth' }); });
+    $('.cert-ctrl .next').on('click', function () { $list[0].scrollBy({ left: step(), behavior: 'smooth' }); });
+    $list.on('scroll', update); update();
   }
 
   /* ---------------------------------------------------------
@@ -395,6 +422,7 @@
     function close() { $lb.prop('hidden', true); $fig.empty(); lockScroll(false); if ($last) { $last.trigger('focus'); } }
 
     $items.on('click', function () { open($(this)); });
+    onSwipe($lb, function (d) { show(idx + d); });
     $lb.on('click', close);
     $lb.find('.lb-fig').on('click', function (e) { e.stopPropagation(); });
     $x.on('click', function (e) { e.stopPropagation(); close(); });
@@ -492,6 +520,61 @@
   }
 
   /* ---------------------------------------------------------
+     13. Testimonials slider (auto-play, pauses on interaction)
+     --------------------------------------------------------- */
+  function initTesti() {
+    var $t = $('.testi-track');
+    if (!$t.length) { return; }
+    var t = $t[0], $bar = $('.testi-prog i'), $count = $('.testi-count'), n = $t.children().length, paused = false;
+    function step() {
+      return $t.children()[0].offsetWidth + (parseFloat(getComputedStyle(t).columnGap) || 0);
+    }
+    function go(dir) {
+      var max = t.scrollWidth - t.clientWidth;
+      if (dir > 0 && t.scrollLeft >= max - 4) { t.scrollTo({ left: 0, behavior: 'smooth' }); }
+      else if (dir < 0 && t.scrollLeft <= 4) { t.scrollTo({ left: max, behavior: 'smooth' }); }
+      else { t.scrollBy({ left: dir * step(), behavior: 'smooth' }); }
+    }
+    function update() {
+      var max = t.scrollWidth - t.clientWidth;
+      $bar.css('transform', 'scaleX(' + Math.max(0.08, max > 0 ? t.scrollLeft / max : 1) + ')');
+      $count.text((Math.min(n - 1, Math.round(t.scrollLeft / step())) + 1) + ' / ' + n);
+    }
+    $('.testi-ctrl .prev').on('click', function () { go(-1); });
+    $('.testi-ctrl .next').on('click', function () { go(1); });
+    $t.on('scroll', update); $win.on('resize', update); update();
+    $('.testi').on('mouseenter focusin touchstart', function () { paused = true; })
+               .on('mouseleave focusout touchend', function () { paused = false; });
+    if (!REDUCED) {
+      setInterval(function () { if (!paused && !document.hidden) { go(1); } }, 6500);
+    }
+  }
+
+  /* ---------------------------------------------------------
+     14. Decorative shapes: scroll-linked movement
+     --------------------------------------------------------- */
+  function initDecor() {
+    if (!MOTION) { return; }
+    function scrub(el, trigger, from, to) {
+      gsap.fromTo(el, from, $.extend({ ease: 'none',
+        scrollTrigger: { trigger: trigger, start: 'top bottom', end: 'bottom top', scrub: true } }, to));
+    }
+    $('[data-par]').each(function () {
+      scrub(this, $(this).parent()[0], { y: 0 }, { y: parseFloat(this.getAttribute('data-par')) });
+    });
+    $('[data-rot]').each(function () {
+      scrub(this, $(this).parent()[0], { rotation: 0 }, { rotation: parseFloat(this.getAttribute('data-rot')) });
+    });
+    $('[data-spin]').each(function () {
+      scrub(this, $(this).closest('section')[0] || this, { '--spin': 0 }, { '--spin': parseFloat(this.getAttribute('data-spin')) });
+    });
+    $('.timeline').each(function () {
+      gsap.fromTo(this, { '--draw': 0 }, { '--draw': 1, ease: 'none',
+        scrollTrigger: { trigger: this, start: 'top 75%', end: 'bottom 70%', scrub: true } });
+    });
+  }
+
+  /* ---------------------------------------------------------
      Boot
      --------------------------------------------------------- */
   $(function () {
@@ -505,6 +588,9 @@
     initScrollMotion();
     initProcess();
     initCerts();
+    initCertSlider();
+    initTesti();
+    initDecor();
     initProducts();
     initGallery();
     initTabs();
