@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+<rect width="600" height="800" fill="#fff"/>
+<rect x="24" y="24" width="552" height="752" fill="none" stroke="#0a0d33" stroke-width="2" stroke-dasharray="10 8" opacity=".35"/>
+<rect x="44" y="44" width="512" height="712" fill="none" stroke="#f6b92b" stroke-width="3"/>
+<path d="M300 74l12 12-12 12-12-12z" fill="#d4145a"/>
+<text x="300" y="170" text-anchor="middle" font-family="Georgia,serif" font-size="22" letter-spacing="8" fill="#4a4f78">CERTIFICATE</text>
+<text x="300" y="215" text-anchor="middle" font-family="Georgia,serif" font-size="14" letter-spacing="4" fill="#4a4f78">OF COMPLIANCE</text>
+<path d="M170 250h260" stroke="#0a0d33" stroke-dasharray="6 6" opacity=".4"/>
+<text x="300" y="400" text-anchor="middle" font-family="Arial,sans-serif" font-weight="800" font-size="120" fill="#3340ff">05</text>
+<text x="300" y="450" text-anchor="middle" font-family="Arial,sans-serif" font-size="16" letter-spacing="3" fill="#0a0d33">SAMPLE PREVIEW</text>
+<g fill="#4a4f78" opacity=".35"><rect x="120" y="500" width="360" height="8"/><rect x="150" y="530" width="300" height="8"/><rect x="130" y="560" width="340" height="8"/></g>
+<path d="M300 620l50 50-50 50-50-50z" fill="#f6b92b"/>
+<path d="M300 640l30 30-30 30-30-30z" fill="none" stroke="#0a0d33" stroke-width="2"/>
+<text x="300" y="765" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#4a4f78">Replace with your real certificate file</text>
+</svg>
