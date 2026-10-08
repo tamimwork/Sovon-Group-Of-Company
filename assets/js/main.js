@@ -264,12 +264,12 @@
   function initProcess() {
     var $s = $('.proc');
     if (!$s.length) { return; }
-    var $track = $s.find('.proc-track'), $bar = $s.find('.proc-progress i'), $hint = $s.find('.proc-hint');
+    var $track = $s.find('.proc-track'), $steps = $s.find('.proc-steps'), $bar = $s.find('.proc-progress i'), $hint = $s.find('.proc-hint');
     function mode(m) {
       $s.toggleClass('is-pinned', m === 'pin').toggleClass('is-swipe', m === 'swipe');
       $hint.text(m === 'pin' ? 'Scroll' : 'Swipe');
     }
-    $track.on('scroll', function () {
+    $steps.on('scroll', function () {
       if (!$s.hasClass('is-swipe')) { return; }
       var max = this.scrollWidth - this.clientWidth;
       $bar.css('transform', 'scaleX(' + Math.max(0.06, max > 0 ? this.scrollLeft / max : 0) + ')');
@@ -546,7 +546,11 @@
     $('.testi').on('mouseenter focusin touchstart', function () { paused = true; })
                .on('mouseleave focusout touchend', function () { paused = false; });
     if (!REDUCED) {
-      setInterval(function () { if (!paused && !document.hidden) { go(1); } }, 6500);
+      var visible = true;
+      if (window.IntersectionObserver) {
+        new IntersectionObserver(function (en) { visible = en[0].isIntersecting; }, { threshold: 0.4 }).observe(t);
+      }
+      setInterval(function () { if (visible && !paused && !document.hidden) { go(1); } }, 6500);
     }
   }
 
